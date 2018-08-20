@@ -10,6 +10,7 @@
 | contains the "web" middleware group. Now create something great!
 |
 */
+use App\PagSeguro\PagSeguro;
 
 Route::get('/', function () {
     return view('welcome');
@@ -17,7 +18,18 @@ Route::get('/', function () {
 
 
 Route::get('/checkout/{id}', function ($id) {
-    return view('store.checkout', compact('id'));
+    $data = [];
+    $data['email'] =         'marcelo@blitsoft.com.br';
+    $data['token'] =         'D16BF2B0E4CB4C48AAF009ED8E2C0FA0';
+
+    $response = (new PagSeguro)->request(PagSeguro::SESSION_SANDBOX, $data);
+
+    $session = new \SimpleXMLElement($response->getContents());
+    $session = $session->id;
+
+    $amount = number_format(521.50, 2, '.', '');
+
+    return view('store.checkout', compact('id', 'session', 'amount'));
 });
 
 

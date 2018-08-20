@@ -11,10 +11,13 @@
     <!-- Compiled and minified CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
 
-
+    <style>
+        .credit_card {
+            border: 1px solid #bbb;
+        }
+    </style>
 </head>
 <body>
-
     <header id="header" class="row">
         <nav>
             <div class="nav-wapper col s12 black">
@@ -50,6 +53,7 @@
             $('.parallax').parallax();
         })
     </script>
+    <script src="/js/pagseguro.js"></script>
 
     @yield('script')
 

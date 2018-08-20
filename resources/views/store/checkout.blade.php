@@ -107,14 +107,26 @@
         <div id="step3">
             <p> Preencha os dados para pagamento</p>
 
+            <input type="hidden" name="creditCardToken" id="creditCardToken">
+            <input type="hidden" name="installmentValue" id="installmentValue">
+
             <div class="row">
                 <div class="input-field col s9">
-                    <input type="text" id="cardNumber">
-                    <label for="cardNumber">Número do cartão</label>
+                    <div class="col s10">
+                        <input type="text" id="cardNumber">
+                        <label for="cardNumber">Número do cartão</label>
+                    </div>
+                    <div class="col s2">
+                        <div id="card_brand"></div>
+                    </div>
+
                 </div>
                 <div class="input-field col s3">
-                    <input type="text" id="cvv">
-                    <label for="card">Código de segurança</label>
+                    <div class="col s12">
+                        <input type="text" id="cvv">
+                        <label for="card">Código de segurança</label>
+                    </div>
+
                 </div>
             </div>
 
@@ -142,6 +154,10 @@
             </div>
         </div>
     </form>
+
+    <div id="payment_methods" class="center-align">
+
+    </div>
     <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
 
     <script>
@@ -156,12 +172,25 @@
 @section('script')
 
     <script type="text/javascript" src="https://stc.sandbox.pagseguro.uol.com.br/pagseguro/api/v2/checkout/pagseguro.directpayment.js"></script>
-    <script scr="/js/pagseguro.js"></script>
+
+
     <script>
 
         const paymentData = {
-            brand: ''
-        }
+            brand: '',
+            amount: '{{ $amount }}'
+        };
+
+        PagSeguroDirectPayment.setSessionId('{{ $session }}');
+
+        pagSeguro.getPaymentMethods(paymentData.amount)
+            .then(function (urls) {
+                let html = '';
+                urls.forEach(function (url) {
+                    html += '<img src ="' + url +'" class="credit_card" >'
+                });
+                $('#payment_methods').html(html);
+            });
 
         $('#shippingAddressPostalCode').on('blur', function () {
             let cep = $(this).val();
@@ -178,16 +207,33 @@
             }
         })
 
-        $('#cardNumber').on('keyup', function () {
-            if($(this).val().length >= 6){
+        $('#cardNumber').on('keyup', function() {
+            if ($(this).val().length >= 6) {
                 let bin = $(this).val();
                 pagSeguro.getBrand(bin)
                     .then(function (res) {
-                        console.log(res);
+                        paymentData.brand = res.result.brand.name;
+                        $('#card_brand').html('<img src="' + res.url + '" class="credit_card">')
+                        return pagSeguro.getInstallments(paymentData.amount, paymentData.brand);
                     })
+                    .then(function(res) {
+                        let html = '';
+                        console.log(res);
 
+                        res.forEach(function (item) {
+                            console.log(item);
+                            html += '<option value="' + item.quantity + '">' + item.quantity + 'x R$' + item.installmentAmount + ' - total R$' + item.totalAmount + '</option>'
+                        });
+                        $('#installmentQuantity').html(html);
+                        $('#installmentValue').val(res[0].installmentAmount);
+                        $('#installmentQuantity').on('change', function () {
+                            let value = res[$('#installmentQuantity').val() - 1].installmentAmount;
+                            $('#installmentValue').val(value);
+                        });
+                    })
             }
-        })
+        });
+
 
         $('#form').on('submit', function (e) {
             e.preventDefault();
@@ -197,10 +243,15 @@
                 cardNumber : $('#cardNumber').val(),
                 expirationMonth : $('#expirationMonth').val(),
                 expirationYear : $('#expirationYear').val(),
-                brand: 'teste'
+                brand: paymentData.brand
             }
-
-            console.log(params);
+            pagSeguro.createCardToken(params)
+                .then(function (token) {
+                    $('#creditCardToken').val(token);
+                    let url = $('#form').attr('action');
+                    let data = $('#form').serialize();
+                    $.post(url, data);
+                })
         })
 
 
