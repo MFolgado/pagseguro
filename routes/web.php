@@ -16,6 +16,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/checkout/success', function () {
+    return 'Pagamento efetuado com sucesso';
+});
 
 Route::get('/checkout/{id}', function ($id) {
     $data = [];
@@ -35,7 +38,8 @@ Route::get('/checkout/{id}', function ($id) {
 
 Route::post('/checkout/{id}', function ($id) {
     $data = request()->all();
-    unset($data['_toekn']);
+//dd($data);
+    unset($data['_token']);
 
     $data['email'] =         'marcelo@blitsoft.com.br';
     $data['token'] =         'D16BF2B0E4CB4C48AAF009ED8E2C0FA0';
@@ -49,7 +53,23 @@ Route::post('/checkout/{id}', function ($id) {
     $data['senderAreaCode'] = substr($data['senderPhone'],0, 2);
     $data['senderPhone'] = substr($data['senderPhone'],2, strlen($data['senderPhone']));
 
+    $data['creditCardHolderAreaCode'] = substr($data['creditCardHolderPhone'], 0, 2);
+    $data['creditCardHolderPhone'] = substr($data['creditCardHolderPhone'], 2, strlen($data['creditCardHolderPhone']));
 
-    return $data;
+    $data['installmentValue'] = number_format($data['installmentValue'],2,'.', '');
+
+    $data['shippingAddressCountry'] = 'BR';
+    $data['billingAddressCountry'] = 'BR';
+
+
+//    remover em produção
+    try{
+        $response = (new PagSeguro)->request(PagSeguro::CHECKOUT_SANDBOX, $data);
+    }catch (\Exception $e){
+        dd($e->getMessage());
+    }
+
+return ['status'=>'success'];
+//    return $data;
 });
 

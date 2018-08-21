@@ -53,5 +53,11 @@ const pagSeguro = {
                 }
             })
         });
+    },
+    getSenderHash: function () {
+        return new Promise(function (resolve, reject) {
+            let data = PagSeguroDirectPayment.getSenderHash();
+            resolve(data);
+        });
     }
 };

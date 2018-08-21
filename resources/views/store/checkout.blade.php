@@ -18,8 +18,12 @@
         <input type="hidden" name="itemQuantity1" value="2">
 
 
+
         {{--Informações do usuário--}}
         <div id="step1">
+
+            <input type="hidden" name="senderHash" id="senderHash">
+
             <p>Preencha suas informações</p>
             <div class="row">
                 <div class="input-field col s12">
@@ -146,6 +150,40 @@
                 </div>
             </div>
 
+            <p> Dados do dono do cartão</p>
+
+            <p>
+                <label>
+                    <input type="checkbox" id="copy_from_me">
+                    <span>Copiar seus dados</span>
+                </label>
+            </p>
+
+
+            <div id="holder_data">
+                @include('store.user_data')
+            </div>
+
+            <div class="row">
+                <div class="input-field col s3">
+                    <input type="text" id="creditCarHolderBirthDate" name="creditCarHolderBirthDate">
+                    <label for="creditCarHolderBirthDate">Data de nascimento</label>
+                </div>
+            </div>
+
+            <p> Endereço da fatura </p>
+
+            <p>
+                <label>
+                    <input type="checkbox" id="copy_from_shipping">
+                    <span> Copiar do endereço de entrega</span>
+                </label>
+            </p>
+
+            <div id="shipping_data">
+                @include('store.shipping_data')
+            </div>
+
 
             <div class="row">
                 <div class="input-field col s12">
@@ -192,6 +230,12 @@
                 $('#payment_methods').html(html);
             });
 
+        $('#senderName').on('change', function () {
+            pagSeguro.getSenderHash().then( function (data) {
+                $('#senderHash').val(data);
+            })
+        })
+
         $('#shippingAddressPostalCode').on('blur', function () {
             let cep = $(this).val();
 
@@ -218,8 +262,6 @@
                     })
                     .then(function(res) {
                         let html = '';
-                        console.log(res);
-
                         res.forEach(function (item) {
                             console.log(item);
                             html += '<option value="' + item.quantity + '">' + item.quantity + 'x R$' + item.installmentAmount + ' - total R$' + item.totalAmount + '</option>'
@@ -250,11 +292,70 @@
                     $('#creditCardToken').val(token);
                     let url = $('#form').attr('action');
                     let data = $('#form').serialize();
-                    $.post(url, data);
+                    $.post(url, data).then(function () {
+                        window.location = '/checkout/success';
+                    });
                 })
         })
 
 
+        let toogle = function (element, verification, callbackShow, callbackHide) {
+            if(!verification.is(':checked')){
+                $(element).show();
+                callbackShow();
+            }else{
+                $(element).hide();
+                callbackHide();
+            }
+        }
+
+        let holderShow = function () {
+            $('#creditCardHolderName').val('');
+            $('#creditCardHolderCPF').val('');
+            $('#creditCardHolderPhone').val('');
+        }
+
+        let holderHide = function () {
+            $('#creditCardHolderName').val($('#senderName').val());
+            $('#creditCardHolderCPF').val($('#senderCPF').val());
+            $('#creditCardHolderPhone').val($('#senderPhone').val());
+            M.updateTextFields();
+
+        }
+
+        let shippingShow = function () {
+            $('#billingAddressPostalCode').val('');
+            $('#billingAddressStreet').val('');
+            $('#billingAddressNumber').val('');
+            $('#billingAddressComplement').val('');
+            $('#billingAddressDistrict').val('');
+            $('#billingAddressCity').val('');
+            $('#billingAddressState').val('');
+        }
+
+        let shippingHide = function () {
+            $('#billingAddressPostalCode').val($('#shippingAddressPostalCode').val());
+            $('#billingAddressStreet').val($('#shippingAddressStreet').val());
+            $('#billingAddressNumber').val($('#shippingAddressNumber').val());
+            $('#billingAddressComplement').val($('#shippingAddressComplement').val());
+            $('#billingAddressDistrict').val($('#shippingAddressDistrict').val());
+            $('#billingAddressCity').val($('#shippingAddressCity').val());
+            $('#billingAddressState').val($('#shippingAddressState').val());
+        }
+
+
+        toogle('#holder_data', $(this), holderShow, holderHide)
+        toogle('#shipping_data', $(this), shippingShow, shippingHide)
+
+        $('#copy_from_me').on('change', function () {
+            toogle('#holder_data', $(this), holderShow, holderHide)
+        })
+
+        $('#copy_from_shipping').on('change', function () {
+            toogle('#shipping_data', $(this), shippingShow, shippingHide)
+        })
+
+        M.updateTextFields();
 
     </script>
 @endsection

@@ -14,6 +14,8 @@ class PagSeguro
 {
     const SESSION = 0;
     const SESSION_SANDBOX = 1;
+    const CHECKOUT = 2;
+    const CHECKOUT_SANDBOX = 3;
 
     private $requests = [
         0 => [
@@ -29,6 +31,20 @@ class PagSeguro
             'options' => [
                 'withBody' => false
             ]
+        ],
+        2 => [
+            'url' => 'https://ws.pagseguro.uol.com.br/v2/transactions',
+            'method' => 'POST',
+            'options' => [
+                'withBody' => true
+            ]
+        ],
+        3 => [
+            'url' => 'https://ws.sandbox.pagseguro.uol.com.br/v2/transactions',
+            'method' => 'POST',
+            'options' => [
+                'withBody' => true
+            ]
         ]
     ];
 
@@ -37,10 +53,16 @@ class PagSeguro
         $request = $this->requests[$url];
         $url = $request['url'];
 
-        $url = $url. '?' . http_build_query($data);
+
+        if($request['options']['withBody']){
+            $options['form_params'] = $data;
+        }else{
+            $url = $url. '?' . http_build_query($data);
+            $options = [];
+        }
 
         $client = new Client();
-        $response = $client->request($request['method'], $url);
+        $response = $client->request($request['method'], $url, $options);
 
         return $response->getBody();
 
